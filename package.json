@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 run server.js --watch -- --port"
+    "start": "pm2 run server.js --watch"
   },
   "keywords": [],
   "author": "",
