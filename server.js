@@ -21,7 +21,7 @@ let storage = multer.diskStorage({
 
 let upload = multer({ storage: storage });
 
-global.port = process.argv.slice(2)[0];
+globa.port = process.env.PORT || 3000;
 global.code = 0;
 global.pools = {};
 global.colors = {
