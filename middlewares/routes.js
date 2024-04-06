@@ -4,7 +4,7 @@ let fs = require('fs');
 
 let pool = mysql.createPool({
 	connectionLimit: 10,
-	host: '127.0.0.1',
+	host: 'sql',
 	port: '3306',
 	user: 'root',
 	password: 'root',
@@ -41,7 +41,14 @@ function routes() {
 			let method = api.split('>')[0];
 			let endpoint = api.split('>')[1];
 
-			router.post(`/${api}`, asyncHandler(async (req, res) => {
+			let call = router[method];
+
+			if (!call) {
+				console.log(`Invalid route method: ${api}`);
+				return;
+			}
+
+			call(endpoint, asyncHandler(async (req, res) => {
 				let result;
 				let { body, query } = req;
 
