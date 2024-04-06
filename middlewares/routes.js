@@ -8,7 +8,7 @@ let pool = mysql.createPool({
 	port: '3306',
 	user: 'root',
 	password: 'root',
-	database: 'hcx',
+	database: 'database',
 });
 
 let connection;
