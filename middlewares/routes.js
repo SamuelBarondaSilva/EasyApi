@@ -36,51 +36,48 @@ function routes() {
 		let apiUrl = file.split('.')[0];
 		let apis = require(`../modules/${apiUrl}`);
 		Object.keys(apis).forEach((api) => {
-			console.log(`[ROUTE] ${api}`)
-
-			let method = api.split('>')[0];
+			let method = api.split('>')[0].toLowerCase();
 			let endpoint = api.split('>')[1];
 
-			let call = router[method];
+			try {
+				router[method](endpoint, asyncHandler(async (req, res) => {
+					let result;
+					let { body, query } = req;
 
-			if (!call) {
-				console.log(`Invalid route method: ${api}`);
+					body = { ...body, ...query, params: req.params };
+
+					let paramNames = Object.keys(req.params);
+					let apiUrlWithPath = api;
+					paramNames.forEach(param => {
+						apiUrlWithPath = apiUrlWithPath.replace(param, `${param}`);
+					});
+
+					if (!modules[apiUrlWithPath]) { throw { message: `API não encontrada: ${apiUrlWithPath}`, status: 404 }; }
+
+					let apiCall = modules[apiUrlWithPath];
+
+					connection = await pool.getConnection();
+					await connection.beginTransaction();
+
+					body.modules = modules;
+
+					result = await apiCall(body, connection);
+
+					if (result === undefined) { throw { message: 'Response was undefined', status: 500 }; };
+
+					req.json = { status: 1, body: result };
+
+					connection.commit();
+					connection.release();
+
+					res.send(req.json);
+				})
+				)
+			} catch (error) {
+				console.error(`[ROUTE] ${api} - metodo não válido: ${method}`);
 				return;
 			}
-
-			call(endpoint, asyncHandler(async (req, res) => {
-				let result;
-				let { body, query } = req;
-
-				body = { ...body, ...query, params: req.params };
-
-				let paramNames = Object.keys(req.params);
-				let apiUrlWithPath = req.url.slice(1); // Remove the leading slash
-				paramNames.forEach(param => {
-					apiUrlWithPath = apiUrlWithPath.replace(req.params[param], `:${param}`);
-				});
-
-				if (!modules[apiUrlWithPath]) { throw { message: `API não encontrada: ${apiUrlWithPath}`, status: 404 }; }
-
-				let apiCall = modules[apiUrlWithPath];
-
-				connection = await pool.getConnection();
-				await connection.beginTransaction();
-
-				body.modules = modules;
-
-				result = await apiCall(body, connection);
-
-				if (result === undefined) { throw { message: 'Response was undefined', status: 500 }; };
-
-				req.json = { status: 1, body: result };
-
-				connection.commit();
-				connection.release();
-
-				res.send(req.json);
-			})
-			)
+			console.log(`[ROUTE] ${api}`)
 		});
 	});
 
